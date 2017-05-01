@@ -9,7 +9,6 @@ Details on the standardised P1 port on dutch smart meters (including protocol, p
 
 * Arduino IDE, v1.6 or later.
 * The iotsa framework, download from <https://github.com/cwi-dis/iotsa>.
-* The new LiquidCrystal library, download from <https://bitbucket.org/fmalpartida/new-liquidcrystal>.
 
 ## Hardware requirements
 
