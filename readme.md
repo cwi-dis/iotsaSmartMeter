@@ -2,7 +2,8 @@
 
 iotsaSmartMeter reads electricity and gas usage of a dutch Smart Meter through the standardised P1 port and makes the data available on the net.
 
-Home page is <https://github.com/cwi-dis/iotsaSmartMeter>.
+Home page is <https://github.com/cwi-dis/iotsaSmartMeter>. 
+This software is licensed under the [MIT license](LICENSE.txt) by the   CWI DIS group, <http://www.dis.cwi.nl>.
 
 Details on the standardised P1 port on dutch smart meters (including protocol, pinout, etc) can be found at <http://files.domoticaforum.eu/uploads/Smartmetering/DSMR%20v4.0%20final%20P1.pdf>
 ## Software requirements
