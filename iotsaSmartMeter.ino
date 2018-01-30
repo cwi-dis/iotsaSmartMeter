@@ -201,7 +201,7 @@ bool IotsaP1Mod::readTelegram() {
   // Remove initial 0x00 byte
   telegramSize = p1Serial.readBytes(telegram, MAX_TELEGRAM_SIZE);
   pinMode(PIN_ENABLE, OUTPUT);  // Set ENABLE to output/low -> pulldown -> no enable signal
-  if (telegramSize > 0 && telegram[0] == 0x00) {
+  while (telegramSize > 0 && telegram[0] != '/') {
     telegramSize--;
     memmove(telegram, telegram+1, telegramSize);
   }
@@ -244,7 +244,9 @@ IotsaP1Mod::handler() {
         message += "}\n";
         server.send(200, "application/json", message);
       } else {
-        server.send(503, "text/plain", "Invalid P1 telegram received");
+        String msg("Invalid P1 telegram received:\n");
+        msg += telegram;
+        server.send(503, "text/plain", msg);
       }
     } else {
       server.send(503, "text/plain", "No P1 telegram received");      
