@@ -11,7 +11,6 @@
 // Project is on hold.
 //
 
-#include <ESP.h>
 #include "iotsa.h"
 #include "iotsaWifi.h"
 #include <SoftwareSerial.h>
