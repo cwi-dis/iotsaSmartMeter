@@ -1,33 +1,16 @@
-# Continuous Integration (CI) is the practice, in software
-# engineering, of merging all developer working copies with a shared mainline
-# several times a day < http://docs.platformio.org/page/ci/index.html >
-#
-# Documentation:
-#
-# * Travis CI Embedded Builds with PlatformIO
-#   < https://docs.travis-ci.com/user/integration/platformio/ >
-#
-# * PlatformIO integration with Travis CI
-#   < http://docs.platformio.org/page/ci/travis.html >
-#
-# * User Guide for `platformio ci` command
-#   < http://docs.platformio.org/page/userguide/cmd_ci.html >
-#
-#
-# Please choice one of the following templates (proposed below) and uncomment
-# it (remove "# " before each line) or use own configuration according to the
-# Travis CI documentation (see above).
-#
-
-
-#
-# Template #1: General project. Test it using existing `platformio.ini`.
-#
-
 language: python
 python:
-    - "2.7"
+- '2.7'
 install:
-    - pip install -U platformio
+- pip install -U platformio
 script:
-    - platformio run
+- platformio run
+deploy:
+  provider: releases
+  api_key:
+    secure: Gnwgg9O+qL0WC4Mwrb6KP2aGBEnfjTrKWZlaoPAieMQK82DH0ObwgWsEdTu6CXQUZphEQXoGyvHLkSJqgbmQ2oNh8C1SM+KWKyMeL3s/SudBfCmmzANphwhP+GPoAd190XsoDL5Hk07Jo+MtxKZXB4RpBZgx9aRFzdgbB/Wol/Ys0v4kbE+JgpPUa024tMPH+1KOmfw7cUKlqJWXBS1R5hV7dA7z5bHMBMqe/RN5PgFmkmWNep3t2czPdvkah8IIJubPgeeBz4wxcaF6wujXu6mjAIRcHAMxHnzQCfp/0Z1OZwuAbMTt1VoG0iMyTNDbSJwnECvAYoUVCfjw6Pk1n5paxejrBWHhoDqb7wzBrK8g5j/YXXE0ijLdrIgPzgVJtXI5ws9ZKZ9cGUVcx79C5FcBTyYWj7cSpP6/n6BgD0Q+LnqoQF5GpJdLU5YRIMlixzqKUYcffNlYmOvV7ytPckZNa0Vdc8Mtse0+WgHxBTIBMktFfNGS0qHfNaS6bcKX9DhhmulpeaCPNGSZxLFYS9t6gDBgiunk4aTtGLfGu+VObGCaOLhEsmN2fK9UTLvM3lQeiWZYtxztIUFLYjp61Bxu2AI7G65DbiCyvt983SaQa63qqc3Knwb+tC0kvySDgcBT10XN9l/FDelRfC8BRbL6YQnb8iI5z+H/9yVYss4=
+  file: ".pioenvs/nodemcuv2/firmware.bin"
+  on:
+    repo: cwi-dis/iotsaSmartMeter
+    tags: true
+    all_branches: true
