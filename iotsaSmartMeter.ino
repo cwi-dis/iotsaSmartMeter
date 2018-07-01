@@ -19,8 +19,7 @@
 
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 
-ESP8266WebServer server(80);
-IotsaApplication application(server, "Iotsa Smart Meter Server");
+IotsaApplication application("Iotsa Smart Meter Server");
 IotsaWifiMod wifiMod(application);
 
 #ifdef WITH_OTA
@@ -210,20 +209,20 @@ bool IotsaP1Mod::readTelegram() {
 void
 IotsaP1Mod::handler() {
   // By default, return in the format acceptable to the first Accept: entry
-  String format = server.header("Accept");
+  String format = server->header("Accept");
   int semiPos = format.indexOf(';');
   if (semiPos > 0) format.remove(semiPos);
   // Allow it to be overridden by format argument
-  for (uint8_t i=0; i<server.args(); i++){
-    if( server.argName(i) == "format") {
-      format = server.arg(i);
+  for (uint8_t i=0; i<server->args(); i++){
+    if( server->argName(i) == "format") {
+      format = server->arg(i);
     }
   }
   if (format == "" || format == "text/plain" || format == "*/*") {
     if (readTelegram()) {
-      server.send_P(200, "text/plain", telegram, telegramSize);
+      server->send_P(200, "text/plain", telegram, telegramSize);
     } else {
-      server.send(503, "text/plain", "No P1 telegram received");
+      server->send(503, "text/plain", "No P1 telegram received");
     }
   } else if (format == "json" || format == "application/json") {
     if (readTelegram()) {
@@ -241,14 +240,14 @@ IotsaP1Mod::handler() {
           if (p.more()) message += ",";
         }
         message += "}\n";
-        server.send(200, "application/json", message);
+        server->send(200, "application/json", message);
       } else {
         String msg("Invalid P1 telegram received:\n");
         msg += telegram;
-        server.send(503, "text/plain", msg);
+        server->send(503, "text/plain", msg);
       }
     } else {
-      server.send(503, "text/plain", "No P1 telegram received");      
+      server->send(503, "text/plain", "No P1 telegram received");      
     }
   } else if (format == "xml" || format == "application/xml") {
     if (readTelegram()) {
@@ -275,23 +274,23 @@ IotsaP1Mod::handler() {
           }
         }
         message += "</smartMeter>\n";
-        server.send(200, "application/xml", message);
+        server->send(200, "application/xml", message);
       } else {
-        server.send(503, "text/plain", "Invalid P1 telegram received");
+        server->send(503, "text/plain", "Invalid P1 telegram received");
       }
     } else {
-      server.send(503, "text/plain", "No P1 telegram received");      
+      server->send(503, "text/plain", "No P1 telegram received");      
     }
   } else {
     String message = "Unknown format ";
     message += format;
-    server.send(422, "text/plain", message);
+    server->send(422, "text/plain", message);
   }
 }
 
 void IotsaP1Mod::serverSetup() {
   // Setup the web server hooks for this module.
-  server.on("/p1", std::bind(&IotsaP1Mod::handler, this));
+  server->on("/p1", std::bind(&IotsaP1Mod::handler, this));
 }
 
 String IotsaP1Mod::info() {
