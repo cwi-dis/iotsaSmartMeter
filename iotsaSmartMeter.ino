@@ -35,7 +35,7 @@ IotsaOtaMod otaMod(application);
 #define DATA_BAUDRATE 115200
 #define MAX_TELEGRAM_SIZE 2048  // Maximum size of a data "telegram"
 
-SoftwareSerial p1Serial(PIN_DATA, SW_SERIAL_UNUSED_PIN, true, 64);
+SoftwareSerial p1Serial(PIN_DATA, -1, true);
 
 // P1 telegram parser class.
 
