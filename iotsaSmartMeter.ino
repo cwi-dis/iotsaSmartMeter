@@ -172,10 +172,10 @@ bool P1Parser::next(String& name, String& value) {
 class IotsaP1Mod : public IotsaMod {
 public:
   IotsaP1Mod(IotsaApplication &_app) : IotsaMod(_app) {}
-	void setup();
-	void serverSetup();
-	void loop();
-  String info();
+	void setup() override;
+	void serverSetup() override;
+	void loop() override;
+  String info() override;
 private:
   void handler();
   bool readTelegram();
