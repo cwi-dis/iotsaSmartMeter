@@ -16,6 +16,8 @@ Details on the standardised P1 port on dutch smart meters (including protocol, p
 * a iotsa board.
 * A RJ25 6P6C connector (often incorrectly called RJ11 6P6C).
 
+Note: the code compiles on esp32, but this is untested (as of January 2021).
+
 ## Hardware construction
 
 Instructions for constructing the hardware are provided in the _extras_ subfolder. [p1reader-board.pdf](extras/p1reader-board.pdf) has the hardware diagram for the iotsa board. The [Fritzing](http://fritzing.org/home/) project is also available as [p1reader-board.fzz](extras/p1reader-board.fzz).

@@ -13,8 +13,11 @@
 
 #include "iotsa.h"
 #include "iotsaWifi.h"
+#ifdef ESP32
+#include <HardwareSerial.h>
+#else
 #include <SoftwareSerial.h>
-
+#endif
 // CHANGE: Add application includes and declarations here
 
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
@@ -30,12 +33,19 @@ IotsaOtaMod otaMod(application);
 //
 // P1 interface.
 //
+#ifdef ESP32
 #define PIN_ENABLE 13   // GPIO13 is ENABLE, active high, with external pullup to 5V (so we use pinMode tricks to drive it)
 #define PIN_DATA 12     // GPIO12 is DATA, 115200 baud serial with inverted logic, internal pullup.
+HardwareSerial p1Serial(2);
+#else
+#define PIN_ENABLE 13   // GPIO13 is ENABLE, active high, with external pullup to 5V (so we use pinMode tricks to drive it)
+#define PIN_DATA 12     // GPIO12 is DATA, 115200 baud serial with inverted logic, internal pullup.
+SoftwareSerial p1Serial(PIN_DATA, -1, true);
+#endif
+
 #define DATA_BAUDRATE 115200
 #define MAX_TELEGRAM_SIZE 2048  // Maximum size of a data "telegram"
 
-SoftwareSerial p1Serial(PIN_DATA, -1, true);
 
 // P1 telegram parser class.
 
@@ -189,7 +199,11 @@ void IotsaP1Mod::setup() {
 	pinMode(PIN_ENABLE, OUTPUT);  // Set ENABLE to output/low -> pulldown -> no enable signal
   digitalWrite(PIN_ENABLE, LOW);
   pinMode(PIN_DATA, INPUT_PULLUP);
+#ifdef ESP32
+  p1Serial.begin(DATA_BAUDRATE, SERIAL_8N1, PIN_DATA, -1, true);
+#else
   p1Serial.begin(DATA_BAUDRATE);
+#endif
   p1Serial.setTimeout(3000);
 }
 
@@ -317,7 +331,9 @@ void setup(void){
 
   application.setup();
   application.serverSetup();
+#ifndef ESP32
   ESP.wdtEnable(WDTO_120MS);
+#endif
 }
  
 // Standard loop() routine, hands off most work to the application framework
