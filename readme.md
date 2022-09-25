@@ -1,5 +1,8 @@
 # iotsaSmartMeter - web interface to dutch smart meter
 
+![build-platformio](https://github.com/cwi-dis/iotsaSmartMeter/workflows/build-platformio/badge.svg)
+![build-arduino](https://github.com/cwi-dis/iotsaSmartMeter/workflows/build-arduino/badge.svg)
+
 iotsaSmartMeter reads electricity and gas usage of a dutch Smart Meter through the standardised P1 port and makes the data available on the net.
 
 Home page is <https://github.com/cwi-dis/iotsaSmartMeter>. 
