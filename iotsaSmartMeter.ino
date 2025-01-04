@@ -30,6 +30,11 @@ IotsaWifiMod wifiMod(application);
 IotsaOtaMod otaMod(application);
 #endif
 
+#ifdef IOTSA_WITH_BLE
+#include "iotsaBLEServer.h"
+IotsaBLEServerMod bleserverMod(application);
+#endif
+
 //
 // P1 interface.
 //
@@ -179,18 +184,39 @@ bool P1Parser::next(String& name, String& value) {
 }
 
 // Declaration of the Hello module
-class IotsaP1Mod : public IotsaMod {
+class IotsaP1Mod : public IotsaMod, IotsaApiProvider, IotsaBLEApiProvider {
 public:
-  IotsaP1Mod(IotsaApplication &_app) : IotsaMod(_app) {}
-	void setup() override;
-	void serverSetup() override;
-	void loop() override;
+  IotsaP1Mod(IotsaApplication &_app) 
+  : IotsaMod(_app),
+    api(this, _app, nullptr) 
+  {}
+  void setup() override;
+  void serverSetup() override;
+  void loop() override;
   String info() override;
+#ifdef IOTSA_WITH_API
+  bool getHandler(const char *path, JsonObject& reply) override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
+  bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
+#endif
 private:
   void handler();
   bool readTelegram();
   char telegram[MAX_TELEGRAM_SIZE];
   int telegramSize;
+protected:
+#ifdef IOTSA_WITH_API
+  IotsaApiService api;
+#endif
+
+#ifdef IOTSA_WITH_BLE
+  IotsaBleApiService bleApi;
+  bool blePutHandler(UUIDstring charUUID) override { return false; };
+  bool bleGetHandler(UUIDstring charUUID) override;
+  static constexpr UUIDstring serviceUUID = "2B000000-BAAD-4A33-898A-3E8902CC1E7A";
+  static constexpr UUIDstring p1UUID = "2B000001-BAAD-4A33-898A-3E8902CC1E7A";
+#endif // IOTSA_WITH_BLE
+
 };
 
 
@@ -205,6 +231,12 @@ void IotsaP1Mod::setup() {
   p1Serial.begin(DATA_BAUDRATE);
 #endif
   p1Serial.setTimeout(3000);
+#ifdef IOTSA_WITH_BLE
+  bleApi.setup(serviceUUID, this);
+  // Explain to clients what the rgb characteristic looks like
+  bleApi.addCharacteristic(p1UUID, BLE_READ, BLE2904::FORMAT_UTF8, 0x2700, "P1 telegram");
+#endif
+
 }
 
 bool IotsaP1Mod::readTelegram() {
@@ -218,6 +250,36 @@ bool IotsaP1Mod::readTelegram() {
     memmove(telegram, telegram+1, telegramSize);
   }
   return telegramSize > 0;
+}
+
+bool IotsaP1Mod::getHandler(const char *path, JsonObject& reply) {
+  if (readTelegram()) {
+    P1Parser p(telegram);
+    if (p.valid()) {
+      while(p.more()) {
+        String name, value;
+        p.next(name, value);
+        reply[name] = value;
+      }
+    } else {
+      reply["error"] = "Invalid P1 telegram received";
+    }
+  } else {
+    reply["error"] = "No P1 telegram received";
+  }
+  return true;
+}
+
+bool IotsaP1Mod::bleGetHandler(UUIDstring charUUID) {
+  if (charUUID == p1UUID) {
+    if (readTelegram()) {
+      bleApi.set(p1UUID, (uint8_t *)telegram, telegramSize);
+    } else {
+      bleApi.set(p1UUID, String("No P1 telegram received"));
+    }
+    return true;
+  }
+  return false;
 }
 
 void
@@ -305,12 +367,20 @@ IotsaP1Mod::handler() {
 void IotsaP1Mod::serverSetup() {
   // Setup the web server hooks for this module.
   server->on("/p1", std::bind(&IotsaP1Mod::handler, this));
+  api.setup("/api/p1", true, false, false);
+  name = "p1";
 }
 
 String IotsaP1Mod::info() {
   // Return some information about this module, for the main page of the web server.
   String rv = "<p>See <a href=\"/p1\">/p1</a> for current household energy usage";
   rv += " (Also available in <a href=\"/p1?format=json\">json</a> and <a href=\"/p1?format=xml\">xml</a>).";
+#ifdef IOTSA_WITH_REST
+  rv += " Or use REST api at <a href='/api/p1'>/api/led</a>.";
+#endif
+#ifdef IOTSA_WITH_BLE
+  rv += " Or use BLE service " + String(serviceUUID) + " on device " + iotsaConfig.hostName + ".";
+#endif
   rv += "</p>";
   return rv;
 }
