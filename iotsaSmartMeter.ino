@@ -34,9 +34,9 @@ IotsaOtaMod otaMod(application);
 // P1 interface.
 //
 #ifdef ESP32
-#define PIN_ENABLE 13   // GPIO13 is ENABLE, active high, with external pullup to 5V (so we use pinMode tricks to drive it)
-#define PIN_DATA 12     // GPIO12 is DATA, 115200 baud serial with inverted logic, internal pullup.
-HardwareSerial p1Serial(2);
+#define PIN_ENABLE 10   // GPIO13 is ENABLE, active high, with external pullup to 5V (so we use pinMode tricks to drive it)
+#define PIN_DATA 20     // GPIO12 is DATA, 115200 baud serial with inverted logic, internal pullup.
+HardwareSerial p1Serial(1);
 #else
 #define PIN_ENABLE 13   // GPIO13 is ENABLE, active high, with external pullup to 5V (so we use pinMode tricks to drive it)
 #define PIN_DATA 12     // GPIO12 is DATA, 115200 baud serial with inverted logic, internal pullup.
