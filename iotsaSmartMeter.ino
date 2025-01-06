@@ -33,6 +33,8 @@ IotsaOtaMod otaMod(application);
 #ifdef IOTSA_WITH_BLE
 #include "iotsaBLEServer.h"
 IotsaBLEServerMod bleserverMod(application);
+#include "iotsaBattery.h"
+IotsaBatteryMod batteryMod(application);
 #endif
 
 //
@@ -272,10 +274,31 @@ bool IotsaP1Mod::getHandler(const char *path, JsonObject& reply) {
 
 bool IotsaP1Mod::bleGetHandler(UUIDstring charUUID) {
   if (charUUID == p1UUID) {
+    IFDEBUG IotsaSerial.println("BLE getHandler for P1 telegram");
     if (readTelegram()) {
-      bleApi.set(p1UUID, (uint8_t *)telegram, telegramSize);
+      // When using BLE we only return the important values, not the full telegram
+      String rv = "{";
+      P1Parser p(telegram);
+      if (p.valid()) {
+        while(p.more()) {
+          String name, value;
+          if (p.next(name, value)) {
+            rv += "\"";
+            rv += name;
+            rv += "\":\"";
+            rv += value;
+            rv += "\",";
+          }
+        }
+        rv += "\"error\":null}";
+        bleApi.set(p1UUID, rv);
+
+      } else {
+        bleApi.set(p1UUID, String("{\"error\":\"Invalid P1 telegram received\"}"));
+      }
+      
     } else {
-      bleApi.set(p1UUID, String("No P1 telegram received"));
+      bleApi.set(p1UUID, String("{\"error\":\"No P1 telegram received\"}"));
     }
     return true;
   }
