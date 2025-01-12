@@ -186,7 +186,11 @@ bool P1Parser::next(String& name, String& value) {
 }
 
 // Declaration of the Hello module
-class IotsaP1Mod : public IotsaMod, IotsaApiProvider, IotsaBLEApiProvider {
+class IotsaP1Mod : public IotsaMod, IotsaApiProvider
+#ifdef IOTSA_WITH_BLE
+, IotsaBLEApiProvider
+#endif 
+{
 public:
   IotsaP1Mod(IotsaApplication &_app) 
   : IotsaMod(_app),
@@ -272,6 +276,7 @@ bool IotsaP1Mod::getHandler(const char *path, JsonObject& reply) {
   return true;
 }
 
+#ifdef IOTSA_WITH_BLE
 bool IotsaP1Mod::bleGetHandler(UUIDstring charUUID) {
   if (charUUID == p1UUID) {
     IFDEBUG IotsaSerial.println("BLE getHandler for P1 telegram");
@@ -304,6 +309,7 @@ bool IotsaP1Mod::bleGetHandler(UUIDstring charUUID) {
   }
   return false;
 }
+#endif
 
 void
 IotsaP1Mod::handler() {
