@@ -165,24 +165,6 @@ bool IotsaP1Mod::readTelegram() {
   return telegramSize > 0;
 }
 
-bool IotsaP1Mod::getHandler(const char *path, JsonObject& reply) {
-  if (readTelegram()) {
-    P1Parser p(telegram);
-    if (p.valid()) {
-      while(p.more()) {
-        String name, value;
-        p.next(name, value);
-        reply[name] = value;
-      }
-    } else {
-      reply["error"] = "Invalid P1 telegram received";
-    }
-  } else {
-    reply["error"] = "No P1 telegram received";
-  }
-  return true;
-}
-
 #ifdef IOTSA_WITH_BLE
 bool IotsaP1Mod::bleGetHandler(UUIDstring charUUID) {
   if (charUUID == p1UUID) {
@@ -219,101 +201,88 @@ bool IotsaP1Mod::bleGetHandler(UUIDstring charUUID) {
 #endif
 
 void
-IotsaP1Mod::handler() {
-  // By default, return in the format acceptable to the first Accept: entry
-  String format = server->header("Accept");
-  int semiPos = format.indexOf(';');
-  if (semiPos > 0) format.remove(semiPos);
-  // Allow it to be overridden by format argument
-  for (uint8_t i=0; i<server->args(); i++){
-    if( server->argName(i) == "format") {
-      format = server->arg(i);
-    }
-  }
-  if (format == "" || format == "text/plain" || format == "*/*") {
-    if (readTelegram()) {
-      server->send_P(200, "text/plain", telegram, telegramSize);
-    } else {
-      server->send(503, "text/plain", "No P1 telegram received");
-    }
-  } else if (format == "json" || format == "application/json") {
-    if (readTelegram()) {
-      P1Parser p(telegram);
-      if (p.valid()) {
-        String message = "{";
-        while(p.more()) {
-          String name, value;
-          p.next(name, value);
-          message += "\"";
-          message += name;
-          message += "\":\"";
-          message += value;
-          message += "\"";
-          if (p.more()) message += ",";
-        }
-        message += "}\n";
-        server->send(200, "application/json", message);
-      } else {
-        String msg("Invalid P1 telegram received:\n");
-        msg += telegram;
-        server->send(503, "text/plain", msg);
-      }
-    } else {
-      server->send(503, "text/plain", "No P1 telegram received");
-    }
-  } else if (format == "xml" || format == "application/xml") {
-    if (readTelegram()) {
-      P1Parser p(telegram);
-      if (p.valid()) {
-        String message = "<smartMeter>";
-        while(p.more()) {
-          String name, value;
-          bool known = p.next(name, value);
-          if (known) {
-            message += "<";
-            message += name;
-            message += ">";
-            message += value;
-            message += "</";
-            message += name;
-            message += ">";
-          } else {
-            message += "<unknown tag=\"";
-            message += name;
-            message += "\">";
-            message += value;
-            message += "</unknown>";
-          }
-        }
-        message += "</smartMeter>\n";
-        server->send(200, "application/xml", message);
-      } else {
-        server->send(503, "text/plain", "Invalid P1 telegram received");
-      }
-    } else {
-      server->send(503, "text/plain", "No P1 telegram received");
-    }
+IotsaP1Mod::handlerText() {
+  if (readTelegram()) {
+    server->send_P(200, "text/plain", telegram, telegramSize);
   } else {
-    String message = "Unknown format ";
-    message += format;
-    server->send(422, "text/plain", message);
+    server->send(503, "text/plain", "No P1 telegram received");
   }
+}
+
+void
+IotsaP1Mod::handlerJson() {
+  if (!readTelegram()) {
+    server->send(503, "text/plain", "No P1 telegram received");
+    return;
+  }
+  P1Parser p(telegram);
+  if (!p.valid()) {
+    String msg("Invalid P1 telegram received:\n");
+    msg += telegram;
+    server->send(503, "text/plain", msg);
+    return;
+  }
+  String message = "{";
+  while(p.more()) {
+    String name, value;
+    p.next(name, value);
+    message += "\"";
+    message += name;
+    message += "\":\"";
+    message += value;
+    message += "\"";
+    if (p.more()) message += ",";
+  }
+  message += "}\n";
+  server->send(200, "application/json", message);
+}
+
+void
+IotsaP1Mod::handlerXml() {
+  if (!readTelegram()) {
+    server->send(503, "text/plain", "No P1 telegram received");
+    return;
+  }
+  P1Parser p(telegram);
+  if (!p.valid()) {
+    server->send(503, "text/plain", "Invalid P1 telegram received");
+    return;
+  }
+  String message = "<smartMeter>";
+  while(p.more()) {
+    String name, value;
+    bool known = p.next(name, value);
+    if (known) {
+      message += "<";
+      message += name;
+      message += ">";
+      message += value;
+      message += "</";
+      message += name;
+      message += ">";
+    } else {
+      message += "<unknown tag=\"";
+      message += name;
+      message += "\">";
+      message += value;
+      message += "</unknown>";
+    }
+  }
+  message += "</smartMeter>\n";
+  server->send(200, "application/xml", message);
 }
 
 void IotsaP1Mod::serverSetup() {
   // Setup the web server hooks for this module.
-  server->on("/p1", std::bind(&IotsaP1Mod::handler, this));
-  api.setup("/api/p1", true, false, false);
-  name = "p1";
+  server->on("/p1.txt", std::bind(&IotsaP1Mod::handlerText, this));
+  server->on("/p1.json", std::bind(&IotsaP1Mod::handlerJson, this));
+  server->on("/p1.xml", std::bind(&IotsaP1Mod::handlerXml, this));
 }
 
 String IotsaP1Mod::info() {
   // Return some information about this module, for the main page of the web server.
-  String rv = "<p>See <a href=\"/p1\">/p1</a> for current household energy usage";
-  rv += " (Also available in <a href=\"/p1?format=json\">json</a> and <a href=\"/p1?format=xml\">xml</a>).";
-#ifdef IOTSA_WITH_REST
-  rv += " Or use REST api at <a href='/api/p1'>/api/led</a>.";
-#endif
+  String rv = "<p>See <a href=\"/p1.txt\">/p1.txt</a> for current household energy usage as raw text";
+  rv += ", or <a href=\"/p1.json\">/p1.json</a> and <a href=\"/p1.xml\">/p1.xml</a> for the parsed form.";
 #ifdef IOTSA_WITH_BLE
   rv += " Or use BLE service " + String(serviceUUID) + " on device " + iotsaConfig.hostName + ".";
 #endif

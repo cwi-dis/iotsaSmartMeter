@@ -1,7 +1,6 @@
 #ifndef _IOTSAP1_H_
 #define _IOTSAP1_H_
 #include "iotsa.h"
-#include "iotsaApi.h"
 #ifdef ESP32
 #include <HardwareSerial.h>
 #else
@@ -28,35 +27,29 @@ private:
   String telegram;
 };
 
-class IotsaP1Mod : public IotsaMod, IotsaApiProvider
+// Pure telemetry module: no config, so no REST/IotsaApiProvider surface.
+// Readings are available as plain (non-API) web endpoints and, on ESP32, BLE.
+class IotsaP1Mod : public IotsaMod
 #ifdef IOTSA_WITH_BLE
-, IotsaBLEApiProvider
+, public IotsaBLEApiProvider
 #endif
 {
 public:
   IotsaP1Mod(IotsaApplication &_app)
-  : IotsaMod(_app),
-    api(this, _app, nullptr)
+  : IotsaMod(_app)
   {}
   void setup() override;
   void serverSetup() override;
   void loop() override;
   String info() override;
-#ifdef IOTSA_WITH_API
-  bool getHandler(const char *path, JsonObject& reply) override;
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
-  bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
-#endif
 private:
-  void handler();
+  void handlerText();
+  void handlerJson();
+  void handlerXml();
   bool readTelegram();
   char telegram[MAX_TELEGRAM_SIZE];
   int telegramSize;
 protected:
-#ifdef IOTSA_WITH_API
-  IotsaApiService api;
-#endif
-
 #ifdef IOTSA_WITH_BLE
   IotsaBleApiService bleApi;
   bool blePutHandler(UUIDstring charUUID) override { return false; };
