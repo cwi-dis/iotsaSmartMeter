@@ -39,10 +39,10 @@ Compile, and flash either using an FTDI or over-the-air.
 
 The first time the board boots it creates a Wifi network with a name similar to _config-iotsa1234_.  Connect a device to that network and visit <http://192.168.4.1>. Configure your device name (using the name _smartmeter_ is suggested), WiFi name and password, and after reboot the iotsa board should connect to your network and be visible as <http://smartmeter.local>.
 
-Accessing <http://smartmeter.local/p1> will read a raw P1 telegram in text format.
+Accessing <http://smartmeter.local/p1.txt> will read a raw P1 telegram in text format.
 
-Accessing <http://smartmeter.local/p1?format=xml> will read a P1 telegram and return the data in XML form.
+Accessing <http://smartmeter.local/p1.xml> will read a P1 telegram and return the data in XML form.
 
-Accessing <http://smartmeter.local/p1?format=json> will read a P1 telegram and return the data in JSON form.
+Accessing <http://smartmeter.local/p1.json> will read a P1 telegram and return the data in JSON form.
 
 Each call will result in a new telegram being requested from the smart meter, so there may be a delay of up to 10 seconds before the data is returned (as per the P1 standard).
