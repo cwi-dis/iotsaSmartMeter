@@ -146,7 +146,7 @@ void IotsaP1Mod::setup() {
 #ifdef IOTSA_WITH_BLE
   bleApi.setup(serviceUUID, this);
   // Explain to clients what the rgb characteristic looks like
-  bleApi.addCharacteristic(p1UUID, BLE_READ, BLE2904::FORMAT_UTF8, 0x2700, "P1 telegram");
+  bleApi.addCharacteristic(p1UUID, BLE_READ, NimBLE2904::FORMAT_UTF8, 0x2700, "P1 telegram");
   batteryMod.allowBLEConfigModeSwitch();
 #endif
 
