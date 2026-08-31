@@ -11,15 +11,11 @@
 #include "iotsaWifi.h"
 #include "iotsaP1.h"
 
-#define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
-
 IotsaApplication application("Iotsa Smart Meter Server");
 IotsaWifiMod wifiMod(application);
 
-#ifdef WITH_OTA
 #include "iotsaOta.h"
 IotsaOtaMod otaMod(application);
-#endif
 
 #ifdef IOTSA_WITH_BLE
 #include "iotsaBattery.h"
@@ -38,7 +34,7 @@ void setup(void){
 #endif
 
   application.setup();
-  application.serverSetup();
+  application.lateSetup();
 #ifndef ESP32
   ESP.wdtEnable(WDTO_120MS);
 #endif

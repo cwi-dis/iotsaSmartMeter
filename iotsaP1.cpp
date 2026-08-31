@@ -146,7 +146,7 @@ void IotsaP1Mod::setup() {
 #ifdef IOTSA_WITH_BLE
   bleApi.setup(serviceUUID, this);
   // Explain to clients what the rgb characteristic looks like
-  bleApi.addCharacteristic(p1UUID, BLE_READ, NimBLE2904::FORMAT_UTF8, 0x2700, "P1 telegram");
+  bleApi.addCharacteristic(p1UUID, bleApi.BLE_READ, NimBLE2904::FORMAT_UTF8, 0x2700, "P1 telegram");
   batteryMod.allowBLEConfigModeSwitch();
 #endif
 
@@ -203,23 +203,23 @@ bool IotsaP1Mod::bleGetHandler(UUIDstring charUUID) {
 void
 IotsaP1Mod::handlerText() {
   if (readTelegram()) {
-    server->send_P(200, "text/plain", telegram, telegramSize);
+    app.server->send_P(200, "text/plain", telegram, telegramSize);
   } else {
-    server->send(503, "text/plain", "No P1 telegram received");
+    app.server->send(503, "text/plain", "No P1 telegram received");
   }
 }
 
 void
 IotsaP1Mod::handlerJson() {
   if (!readTelegram()) {
-    server->send(503, "text/plain", "No P1 telegram received");
+    app.server->send(503, "text/plain", "No P1 telegram received");
     return;
   }
   P1Parser p(telegram);
   if (!p.valid()) {
     String msg("Invalid P1 telegram received:\n");
     msg += telegram;
-    server->send(503, "text/plain", msg);
+    app.server->send(503, "text/plain", msg);
     return;
   }
   String message = "{";
@@ -234,18 +234,18 @@ IotsaP1Mod::handlerJson() {
     if (p.more()) message += ",";
   }
   message += "}\n";
-  server->send(200, "application/json", message);
+  app.server->send(200, "application/json", message);
 }
 
 void
 IotsaP1Mod::handlerXml() {
   if (!readTelegram()) {
-    server->send(503, "text/plain", "No P1 telegram received");
+    app.server->send(503, "text/plain", "No P1 telegram received");
     return;
   }
   P1Parser p(telegram);
   if (!p.valid()) {
-    server->send(503, "text/plain", "Invalid P1 telegram received");
+    app.server->send(503, "text/plain", "Invalid P1 telegram received");
     return;
   }
   String message = "<smartMeter>";
@@ -269,14 +269,14 @@ IotsaP1Mod::handlerXml() {
     }
   }
   message += "</smartMeter>\n";
-  server->send(200, "application/xml", message);
+  app.server->send(200, "application/xml", message);
 }
 
-void IotsaP1Mod::serverSetup() {
+void IotsaP1Mod::lateSetup() {
   // Setup the web server hooks for this module.
-  server->on("/p1.txt", std::bind(&IotsaP1Mod::handlerText, this));
-  server->on("/p1.json", std::bind(&IotsaP1Mod::handlerJson, this));
-  server->on("/p1.xml", std::bind(&IotsaP1Mod::handlerXml, this));
+  app.server->on("/p1.txt", std::bind(&IotsaP1Mod::handlerText, this));
+  app.server->on("/p1.json", std::bind(&IotsaP1Mod::handlerJson, this));
+  app.server->on("/p1.xml", std::bind(&IotsaP1Mod::handlerXml, this));
 }
 
 String IotsaP1Mod::info() {

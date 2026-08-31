@@ -29,17 +29,14 @@ private:
 
 // Pure telemetry module: no config, so no REST/IotsaApiProvider surface.
 // Readings are available as plain (non-API) web endpoints and, on ESP32, BLE.
-class IotsaP1Mod : public IotsaMod
-#ifdef IOTSA_WITH_BLE
-, public IotsaBLEApiProvider
-#endif
-{
+// IotsaBaseModule already is-a IotsaBLEProvider, so no extra BLE base needed.
+class IotsaP1Mod : public IotsaBaseModule {
 public:
   IotsaP1Mod(IotsaApplication &_app)
-  : IotsaMod(_app)
+  : IotsaBaseModule(_app)
   {}
   void setup() override;
-  void serverSetup() override;
+  void lateSetup() override;
   void loop() override;
   String info() override;
 private:
