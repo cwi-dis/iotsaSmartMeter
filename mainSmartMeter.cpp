@@ -28,11 +28,6 @@ IotsaP1Mod p1Mod(application);
 
 // Standard setup() method, hands off most work to the application framework
 void setup(void){
-#if 0
-  // We lower power, the P1 port can only supply 100mA.
-  WiFi.setOutputPower(0);
-#endif
-
   application.setup();
   application.lateSetup();
 #ifndef ESP32
