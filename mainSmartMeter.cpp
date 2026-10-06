@@ -8,18 +8,12 @@
 //
 
 #include "iotsa.h"
-#include "iotsaWifi.h"
 #include "iotsaP1.h"
 
 IotsaApplication application("Iotsa Smart Meter Server");
-IotsaWifiMod wifiMod(application);
-
-#include "iotsaOta.h"
-IotsaOtaMod otaMod(application);
 
 #ifdef IOTSA_WITH_BLE
 #include "iotsaBattery.h"
-IotsaBLEServerMod bleserverMod(application);
 IotsaBatteryMod batteryMod(application);
 #endif
 
