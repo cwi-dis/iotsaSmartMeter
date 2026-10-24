@@ -44,7 +44,8 @@ private:
   void handlerJson();
   void handlerXml();
   bool readTelegram();
-  char telegram[MAX_TELEGRAM_SIZE];
+  bool telegramToJson(JsonDocument& doc, bool knownOnly);
+  char telegram[MAX_TELEGRAM_SIZE+1];
   int telegramSize;
 protected:
 #ifdef IOTSA_WITH_BLE

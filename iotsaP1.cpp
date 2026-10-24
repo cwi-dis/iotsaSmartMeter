@@ -33,8 +33,10 @@ bool P1Parser::next(String& name, String& value) {
   int lParPos = telegram.indexOf('(');
   int lfPos = telegram.indexOf('\n');
   if (lfPos < 2 || lParPos < 0 || lParPos > lfPos) {
+    // Only the offending line: the whole telegram is on /p1.txt.
     name = "syntaxErrorAt";
-    value = telegram;
+    value = telegram.substring(0, lfPos >= 0 ? lfPos : telegram.length());
+    value.trim();
     telegram = "!";
     return true;
   }
@@ -162,7 +164,22 @@ bool IotsaP1Mod::readTelegram() {
     telegramSize--;
     memmove(telegram, telegram+1, telegramSize);
   }
+  // The parser takes a C string: without this it would read on into what is
+  // left of an earlier, longer telegram.
+  telegram[telegramSize] = '\0';
   return telegramSize > 0;
+}
+
+// The parsed telegram as name/value pairs; knownOnly leaves out the lines the
+// parser has no name for. ArduinoJson does the escaping.
+bool IotsaP1Mod::telegramToJson(JsonDocument& doc, bool knownOnly) {
+  P1Parser p(telegram);
+  if (!p.valid()) return false;
+  while(p.more()) {
+    String name, value;
+    if (p.next(name, value) || !knownOnly) doc[name] = value;
+  }
+  return true;
 }
 
 #ifdef IOTSA_WITH_BLE
@@ -171,22 +188,12 @@ bool IotsaP1Mod::bleGetHandler(UUIDstring charUUID) {
     IFDEBUG IotsaSerial.println("BLE getHandler for P1 telegram");
     if (readTelegram()) {
       // When using BLE we only return the important values, not the full telegram
-      String rv = "{";
-      P1Parser p(telegram);
-      if (p.valid()) {
-        while(p.more()) {
-          String name, value;
-          if (p.next(name, value)) {
-            rv += "\"";
-            rv += name;
-            rv += "\":\"";
-            rv += value;
-            rv += "\",";
-          }
-        }
-        rv += "\"error\":null}";
+      JsonDocument doc;
+      if (telegramToJson(doc, true)) {
+        doc["error"] = nullptr;
+        String rv;
+        serializeJson(doc, rv);
         bleApi.set(p1UUID, rv);
-
       } else {
         bleApi.set(p1UUID, String("{\"error\":\"Invalid P1 telegram received\"}"));
       }
@@ -215,25 +222,16 @@ IotsaP1Mod::handlerJson() {
     app.server->send(503, "text/plain", "No P1 telegram received");
     return;
   }
-  P1Parser p(telegram);
-  if (!p.valid()) {
+  JsonDocument doc;
+  if (!telegramToJson(doc, false)) {
     String msg("Invalid P1 telegram received:\n");
     msg += telegram;
     app.server->send(503, "text/plain", msg);
     return;
   }
-  String message = "{";
-  while(p.more()) {
-    String name, value;
-    p.next(name, value);
-    message += "\"";
-    message += name;
-    message += "\":\"";
-    message += value;
-    message += "\"";
-    if (p.more()) message += ",";
-  }
-  message += "}\n";
+  String message;
+  serializeJson(doc, message);
+  message += "\n";
   app.server->send(200, "application/json", message);
 }
 
@@ -256,15 +254,15 @@ IotsaP1Mod::handlerXml() {
       message += "<";
       message += name;
       message += ">";
-      message += value;
+      message += htmlEncode(value);
       message += "</";
       message += name;
       message += ">";
     } else {
       message += "<unknown tag=\"";
-      message += name;
+      message += htmlEncode(name);
       message += "\">";
-      message += value;
+      message += htmlEncode(value);
       message += "</unknown>";
     }
   }
@@ -273,10 +271,14 @@ IotsaP1Mod::handlerXml() {
 }
 
 void IotsaP1Mod::lateSetup() {
-  // Setup the web server hooks for this module.
-  app.server->on("/p1.txt", std::bind(&IotsaP1Mod::handlerText, this));
-  app.server->on("/p1.json", std::bind(&IotsaP1Mod::handlerJson, this));
-  app.server->on("/p1.xml", std::bind(&IotsaP1Mod::handlerXml, this));
+  // The readings answer the request themselves. Open to everyone on the
+  // network, on purpose (cwi-dis/iotsa#183): the WiFi is the outer wall. They
+  // do show when someone is home, and the meter IDs; a right here would also
+  // mean credentials for whatever polls the meter, and BLE can't carry those
+  // yet (cwi-dis/iotsa#303).
+  addWebHandler("/p1.txt", [this]() { handlerText(); }, IOTSA_RIGHT_NONE, true);
+  addWebHandler("/p1.json", [this]() { handlerJson(); }, IOTSA_RIGHT_NONE, true);
+  addWebHandler("/p1.xml", [this]() { handlerXml(); }, IOTSA_RIGHT_NONE, true);
 }
 
 String IotsaP1Mod::info() {
