@@ -8,8 +8,6 @@
 #endif
 #ifdef IOTSA_WITH_BLE
 #include "iotsaBLEServer.h"
-#include "iotsaBattery.h"
-extern IotsaBatteryMod batteryMod;
 #endif
 
 #define MAX_TELEGRAM_SIZE 2048  // Maximum size of a data "telegram"

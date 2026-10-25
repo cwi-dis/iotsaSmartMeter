@@ -149,7 +149,6 @@ void IotsaP1Mod::setup() {
   bleApi.setup(serviceUUID, this);
   // Explain to clients what the rgb characteristic looks like
   bleApi.addCharacteristic(p1UUID, bleApi.BLE_READ, NimBLE2904::FORMAT_UTF8, 0x2700, "P1 telegram");
-  batteryMod.allowBLEConfigModeSwitch();
 #endif
 
 }
@@ -185,7 +184,6 @@ bool IotsaP1Mod::telegramToJson(JsonDocument& doc, bool knownOnly) {
 #ifdef IOTSA_WITH_BLE
 bool IotsaP1Mod::bleGetHandler(UUIDstring charUUID) {
   if (charUUID == p1UUID) {
-    IFDEBUG IotsaSerial.println("BLE getHandler for P1 telegram");
     if (readTelegram()) {
       // When using BLE we only return the important values, not the full telegram
       JsonDocument doc;
